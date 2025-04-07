@@ -1,0 +1,40 @@
+{
+    "manifest_version": 3,
+    "name": "LeetSync",
+    "version": "1.0.0",
+    "description": "Sync your LeetCode solutions to GitHub",
+    "action": {
+      "default_popup": "src/popup/index.html",
+      "default_icon": {
+        "16": "src/assets/icons/icon16.png",
+        "48": "src/assets/icons/icon48.png",
+        "128": "src/assets/icons/icon128.png"
+      }
+    },
+    "options_page": "src/options/index.html",
+    "background": {
+      "service_worker": "src/background/index.js",
+      "type": "module"
+    },
+    "content_scripts": [
+      {
+        "matches": ["*://*.leetcode.com/*"],
+        "js": ["src/content/index.js"]
+      }
+    ],
+    "permissions": [
+      "storage",
+      "identity",
+      "tabs",
+      "notifications"
+    ],
+    "host_permissions": [
+      "*://*.leetcode.com/*",
+      "*://*.github.com/*"
+    ],
+    "icons": {
+      "16": "src/assets/icons/icon16.png",
+      "48": "src/assets/icons/icon48.png",
+      "128": "src/assets/icons/icon128.png"
+    }
+  }
