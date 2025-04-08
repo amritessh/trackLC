@@ -1,37 +1,24 @@
+// src/components/DataList.tsx
 import React from "react"
-
 import DataItem from "./DataItem"
 
-type Item = {
-  id: number
-  name: string
-  description?: string
-}
-
-type DataListProps = {
-  items: Item[]
-  onItemClick?: (item: Item) => void
-}
-
-const DataList: React.FC<DataListProps> = ({ items, onItemClick }) => {
-  if (!items || items.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-gray-500">
-        <p>No data available</p>
-      </div>
-    )
-  }
-
+function DataList({ items, title, emptyMessage = "No items" }) {
   return (
-    <ul className="divide-y divide-gray-200">
-      {items.map((item) => (
-        <DataItem
-          key={item.id}
-          item={item}
-          onClick={() => onItemClick && onItemClick(item)}
-        />
-      ))}
-    </ul>
+    <div className="space-y-2">
+      {title && <h3 className="text-md font-medium mb-2">{title}</h3>}
+      
+      {items && items.length > 0 ? (
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {items.map((item, index) => (
+            <DataItem key={index} item={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-gray-50 rounded-md p-4 text-center text-gray-500">
+          {emptyMessage}
+        </div>
+      )}
+    </div>
   )
 }
 
