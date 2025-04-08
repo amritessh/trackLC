@@ -1,6 +1,6 @@
 // src/utils/apiService.ts
 // API Base URL - change to your deployed backend URL
-const API_BASE_URL = "http://localhost:3000/api"
+const API_BASE_URL = "http://localhost:3000/"
 
 /**
  * Exchange GitHub OAuth code for token

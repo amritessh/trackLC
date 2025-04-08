@@ -2,6 +2,10 @@
 import { useState, useEffect } from "react"
 import { useStorage } from "./useStorage"
 import { exchangeGitHubCode, getGitHubLoginUrl } from "../utils/apiService"
+import { Storage } from "@plasmohq/storage"
+
+// Create a single storage instance to reuse
+const storage = new Storage({ area: "local" })
 
 export function useExtensionData() {
   // Storage values with default states
@@ -51,7 +55,7 @@ export function useExtensionData() {
       const state = Math.random().toString(36).substring(2, 15)
       
       // Store state for verification
-      await new Storage().set("oauth_state", state)
+      await storage.set("oauth_state", state)
       
       // Get login URL from backend
       const { login_url } = await getGitHubLoginUrl(state)
@@ -77,7 +81,7 @@ export function useExtensionData() {
             const returnedState = params.get("state")
             
             // Verify state
-            const { oauth_state } = await new Storage().get("oauth_state")
+            const oauth_state = await storage.get("oauth_state")
             
             if (returnedState !== oauth_state) {
               setError("Security verification failed. Please try again.")

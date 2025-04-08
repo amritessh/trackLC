@@ -1,5 +1,10 @@
 // src/config/cors.js
-const { allowedOrigins } = require('./env');
+const { ALLOWED_ORIGINS } = require('./env');
+
+// Parse allowed origins from environment variable or use defaults
+const allowedOrigins = ALLOWED_ORIGINS 
+  ? ALLOWED_ORIGINS.split(',') 
+  : ['chrome-extension://your-extension-id', 'http://localhost:8080'];
 
 const corsOptions = {
   origin: function (origin, callback) {
