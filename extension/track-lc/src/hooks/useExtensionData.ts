@@ -1,7 +1,11 @@
 // src/hooks/useExtensionData.ts
 import { useState, useEffect } from "react"
 import { useStorage } from "./useStorage"
-import { exchangeGitHubCode, getGitHubLoginUrl } from "../utils/apiService"
+import { 
+  exchangeGitHubCode, 
+  getGitHubLoginUrl, 
+  loginWithPersonalToken 
+} from "../utils/apiService"
 import { Storage } from "@plasmohq/storage"
 
 // Create a single storage instance to reuse
@@ -36,16 +40,60 @@ export function useExtensionData() {
   
   // Determine current view based on stored data
   useEffect(() => {
+    console.log("useEffect running with token:", githubToken ? "exists" : "none", 
+                "repoOwner:", repoOwner, 
+                "repoName:", repoName);
+    
     if (!githubToken) {
+      console.log("No token, setting view to login");
       setCurrentView('login')
     } else if (!repoOwner || !repoName) {
+      console.log("Has token but missing repo info, setting view to config");
       setCurrentView('config')
     } else {
+      console.log("All info present, setting view to submissions");
       setCurrentView('submissions')
     }
   }, [githubToken, repoOwner, repoName])
   
-  // Handle GitHub login
+  // Handle GitHub login with Personal Access Token
+  const handlePersonalTokenLogin = async (token: string) => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      console.log("Logging in with personal access token")
+      
+      // Validate and get user info with token
+      const tokenData = await loginWithPersonalToken(token)
+      
+      console.log("Personal token validated, saving data")
+      
+      // Save token
+      await setGithubToken(tokenData.access_token)
+      
+      // Save user info if available
+      if (tokenData.user) {
+        await setGithubUser(tokenData.user)
+        
+        // Pre-fill repo owner
+        if (tokenData.user.login) {
+          await setRepoOwner(tokenData.user.login)
+        }
+      }
+      
+      console.log("Personal token login successful")
+      setIsLoading(false)
+    } catch (error) {
+      console.error("Error logging in with personal token:", error)
+      setError("Invalid personal access token. Make sure it has the 'repo' scope.")
+      setIsLoading(false)
+    }
+    console.log("View should now be:", currentView);
+    document.body.style.border = '3px solid green'; 
+  }
+  
+  // Handle GitHub OAuth login
   const handleGitHubLogin = async () => {
     setIsLoading(true)
     setError(null)
@@ -60,6 +108,8 @@ export function useExtensionData() {
       // Get login URL from backend
       const { login_url } = await getGitHubLoginUrl(state)
       
+      console.log("Launching auth flow with URL:", login_url)
+      
       // Launch OAuth flow
       chrome.identity.launchWebAuthFlow(
         {
@@ -67,8 +117,11 @@ export function useExtensionData() {
           interactive: true
         },
         async (redirectUrl) => {
-          if (chrome.runtime.lastError) {
-            setError("Authentication failed. Please try again.")
+          console.log("Auth flow completed, redirect URL:", redirectUrl)
+          
+          if (!redirectUrl || chrome.runtime.lastError) {
+            console.error("Auth flow error:", chrome.runtime.lastError)
+            setError("Authentication failed. Please try again or use a Personal Access Token instead.")
             setIsLoading(false)
             return
           }
@@ -80,20 +133,31 @@ export function useExtensionData() {
             const code = params.get("code")
             const returnedState = params.get("state")
             
+            console.log("Extracted code and state from redirect URL")
+            
             // Verify state
             const oauth_state = await storage.get("oauth_state")
             
             if (returnedState !== oauth_state) {
+              console.error("State mismatch", {
+                returnedState,
+                oauth_state
+              })
               setError("Security verification failed. Please try again.")
               setIsLoading(false)
               return
             }
             
             if (code) {
+              console.log("Got authorization code, exchanging for token")
+              
               // Exchange code for token
               const tokenData = await exchangeGitHubCode(code)
               
               if (tokenData.access_token) {
+                console.log("Got access token, saving to storage")
+                console.log("Token saved successfully, current view:", currentView)
+                
                 // Save token
                 await setGithubToken(tokenData.access_token)
                 
@@ -109,10 +173,12 @@ export function useExtensionData() {
                 
                 setIsLoading(false)
               } else {
-                setError("Failed to get access token. Please try again.")
+                console.error("No access token in response", tokenData)
+                setError("Failed to get access token. Please try using a Personal Access Token instead.")
                 setIsLoading(false)
               }
             } else {
+              console.error("No code in redirect URL")
               setError("No authorization code received. Please try again.")
               setIsLoading(false)
             }
@@ -190,6 +256,7 @@ export function useExtensionData() {
     
     // Actions
     handleGitHubLogin,
+    handlePersonalTokenLogin,
     handleLogout,
     saveRepoConfig,
     syncPending,

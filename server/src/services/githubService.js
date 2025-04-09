@@ -10,20 +10,45 @@ const logger = require('../utils/logger');
  */
 exports.exchangeCodeForToken = async (code) => {
   try {
-    const response = await axios.post('https://github.com/login/oauth/access_token', {
+    console.log(`Attempting to exchange code for token: ${code.substring(0, 5)}...`);
+    
+    // Include the redirect URI in the token request (must match what was used in the authorization request)
+    const params = {
       client_id: github.clientId,
       client_secret: github.clientSecret,
-      code
-    }, {
+      code: code
+      // Add the redirect URI if needed
+      // redirect_uri: github.redirectUri 
+    };
+    
+    console.log(`Making request to GitHub with client ID: ${github.clientId.substring(0, 5)}...`);
+    
+    const response = await axios.post('https://github.com/login/oauth/access_token', params, {
       headers: {
         Accept: 'application/json'
       }
     });
     
+    if (response.data.error) {
+      logger.error(`GitHub OAuth error: ${response.data.error} - ${response.data.error_description}`);
+      throw new Error(response.data.error_description || response.data.error);
+    }
+    
+    logger.info('Successfully exchanged code for token');
     return response.data;
   } catch (error) {
-    logger.error('Error exchanging code for token:', error.message);
-    throw new Error('Failed to exchange code for token');
+    if (error.response) {
+      // The request was made and the server responded with a status code outside of 2xx
+      logger.error(`GitHub API error (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      // The request was made but no response was received
+      logger.error('No response received from GitHub', error.request);
+    } else {
+      // Something happened in setting up the request
+      logger.error('Error setting up request:', error.message);
+    }
+    
+    throw new Error('Failed to exchange code for token: ' + (error.message || 'Unknown error'));
   }
 };
 

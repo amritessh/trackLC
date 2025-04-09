@@ -11,5 +11,5 @@ module.exports = {
   },
   allowedOrigins: process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['chrome-extension://your-extension-id']
+    : ['chrome-extension://chokopcakclfbkaidoahhimpmhanfcol']
 };

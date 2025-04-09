@@ -1,13 +1,21 @@
 // src/popup.tsx
+import { useState } from "react"
 import { useExtensionData } from "./hooks/useExtensionData"
 import "./style.css"
 
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import LoadingState from "./components/LoadingState"
-import DataList from "./components/DataList"
 
 function LoginView({ onLogin, isLoading, error }) {
+  const [personalToken, setPersonalToken] = useState("");
+  const { handlePersonalTokenLogin } = useExtensionData();
+
+  const handleTokenLogin = async () => {
+    if (!personalToken) return;
+    await handlePersonalTokenLogin(personalToken);
+  };
+
   return (
     <div className="p-4 flex flex-col items-center">
       <p className="text-center mb-4 text-gray-600">
@@ -20,6 +28,36 @@ function LoginView({ onLogin, isLoading, error }) {
         </div>
       )}
       
+      {/* Personal Access Token Input */}
+      <div className="w-full mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          GitHub Personal Access Token
+        </label>
+        <input
+          type="password"
+          value={personalToken}
+          onChange={(e) => setPersonalToken(e.target.value)}
+          placeholder="ghp_xxxxxxxxxxxxxxxx"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
+        />
+        <button
+          onClick={handleTokenLogin}
+          disabled={isLoading || !personalToken}
+          className="w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+        >
+          Login with Token
+        </button>
+        <p className="text-xs text-gray-500 mt-1">
+          Create a token with 'repo' scope at GitHub → Settings → Developer settings → Personal Access Tokens
+        </p>
+      </div>
+      
+      <div className="relative w-full text-center my-4">
+        <hr className="border-gray-300" />
+        <span className="px-2 text-gray-500 bg-white text-sm absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">or</span>
+      </div>
+      
+      {/* Keep the existing GitHub OAuth button */}
       <button
         onClick={onLogin}
         disabled={isLoading}
@@ -35,16 +73,16 @@ function LoginView({ onLogin, isLoading, error }) {
         Login with GitHub
       </button>
     </div>
-  )
+  );
 }
 
 function ConfigView({ repoOwner, repoName, onSave, isLoading, error }) {
-  const [owner, setOwner] = useState(repoOwner)
-  const [name, setName] = useState(repoName)
+  const [owner, setOwner] = useState(repoOwner);
+  const [name, setName] = useState(repoName);
   
   const handleSave = () => {
-    onSave(owner, name)
-  }
+    onSave(owner, name);
+  };
   
   return (
     <div className="p-4">
@@ -94,7 +132,7 @@ function ConfigView({ repoOwner, repoName, onSave, isLoading, error }) {
         {isLoading ? "Saving..." : "Save Configuration"}
       </button>
     </div>
-  )
+  );
 }
 
 function SubmissionsView({ 
@@ -102,6 +140,7 @@ function SubmissionsView({
   pendingSubmissions, 
   onSyncPending, 
   onOpenRepo,
+  onLogout,
   repoOwner,
   repoName
 }) {
@@ -189,7 +228,7 @@ function SubmissionsView({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 function SubmissionCard({ submission }) {
@@ -229,7 +268,7 @@ function SubmissionCard({ submission }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function IndexPopup() {
@@ -248,7 +287,7 @@ function IndexPopup() {
     saveRepoConfig,
     syncPending,
     openRepository
-  } = useExtensionData()
+  } = useExtensionData();
 
   // Render different views based on state
   const renderView = () => {
@@ -260,7 +299,7 @@ function IndexPopup() {
             isLoading={isLoading}
             error={error}
           />
-        )
+        );
       case 'config':
         return (
           <ConfigView 
@@ -270,7 +309,7 @@ function IndexPopup() {
             isLoading={isLoading}
             error={error}
           />
-        )
+        );
       case 'submissions':
         return (
           <SubmissionsView 
@@ -282,12 +321,12 @@ function IndexPopup() {
             repoOwner={repoOwner}
             repoName={repoName}
           />
-        )
+        );
       case 'loading':
       default:
-        return <LoadingState />
+        return <LoadingState />;
     }
-  }
+  };
 
   return (
     <div className="w-96 min-h-[400px] bg-white text-gray-800 shadow-md rounded-md overflow-hidden">
@@ -297,7 +336,7 @@ function IndexPopup() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }
 
-export default IndexPopup
+export default IndexPopup;
